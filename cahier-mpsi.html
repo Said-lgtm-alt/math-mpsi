@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mathématiques MPSI – Documents à télécharger</title>
+<style>
+:root{--bg:#0f1115;--card:#1b1e26;--side:#16315c;--tx:#f2f4f8;--mut:#9aa4b5;--ac:#6aa9ff;--line:#3a4152}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,Segoe UI,Arial,sans-serif}
+.wrap{display:flex;gap:24px;max-width:1300px;margin:0 auto;padding:24px}
+aside{width:260px;flex:none;background:var(--side);border-radius:6px;padding:16px;align-self:flex-start}
+aside h3{margin:0 0 8px;font-size:18px;border-bottom:1px solid #5a78a8;padding-bottom:8px}
+aside h2{margin:14px 0 6px;color:var(--ac);font-size:22px}
+aside a{display:block;padding:5px 0;color:var(--tx);text-decoration:none;cursor:pointer}
+aside a:hover{color:var(--ac)}aside a.on{color:var(--ac);font-weight:700}
+main{flex:1;min-width:0}
+.bar{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:4px;padding:10px 14px;background:var(--card);font-weight:700}
+.bar span{flex:1}
+button,.btn{background:#26406e;color:var(--tx);border:1px solid #4a6aa5;border-radius:4px;padding:6px 12px;cursor:pointer;font-size:14px}
+button:hover{background:#31528d}
+button.x{background:none;border:none;color:var(--mut);padding:2px 6px}button.x:hover{color:#ff6b6b}
+ul{list-style:none;margin:18px 0;padding:0}
+li{display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px dotted var(--line)}
+li .t{flex:1;min-width:0}
+li a{color:var(--tx);font-weight:700;text-decoration:none}li a:hover{color:var(--ac)}
+li .m{color:var(--mut);font-size:14px;white-space:nowrap}
+.dir a{cursor:pointer}
+.empty{color:var(--mut);padding:20px 0}
+form{display:none;gap:8px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:14px;margin-top:14px}
+form.show{display:flex}
+form input{background:#0f1115;color:var(--tx);border:1px solid var(--line);border-radius:4px;padding:7px;font-size:14px}
+form .f1{flex:2 1 220px}form .f2{flex:1 1 140px}
+.crumb{font-size:14px;color:var(--mut);margin:10px 2px}
+.crumb a{color:var(--ac);cursor:pointer}
+@media(max-width:760px){.wrap{flex-direction:column;padding:12px}aside{width:100%}li{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<aside>
+<h3>📁 Documents généraux</h3>
+<h2>Mathématiques</h2>
+<div id="nav"></div>
+<p style="margin:14px 0 0;display:flex;gap:6px;flex-wrap:wrap">
+<button onclick="exp()">Exporter</button>
+<label class="btn">Importer<input type="file" accept=".json" hidden onchange="imp(event)"></label>
+</p>
+</aside>
+<main>
+<div class="bar"><span id="title"></span>
+<button onclick="toggle('fd')">+ Dossier</button>
+<button onclick="toggle('fx')">+ Document</button></div>
+<div class="crumb" id="crumb"></div>
+
+<form id="fd" onsubmit="addDir(event)">
+<input class="f1" id="dn" placeholder="Nom du dossier (ex : Résumés de cours)" required>
+<button>Créer le dossier</button>
+</form>
+
+<form id="fx" onsubmit="addDoc(event)">
+<input class="f1" id="xt" placeholder="Titre (ex : 5 : Applications et dénombrement)" required>
+<input class="f2" id="xd" type="date">
+<input class="f1" id="xp" placeholder="Chemin ou lien du PDF (ex : cours/chap5.pdf)">
+<label class="btn">Choisir un fichier<input type="file" id="xf" hidden onchange="pick(event)"></label>
+<button>Ajouter</button>
+</form>
+
+<ul id="list"></ul>
+</main>
+</div>
+
+<script>
+const SECTIONS=["Cours, année actuelle","TD, année actuelle","Devoirs surveillés","Devoirs \"maison\"","Colles","Formulaires","Archives"];
+const KEY="cahier-mpsi-v1";
+let S=load(),cur=SECTIONS[0],path=[];
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d)return d}catch(e){}
+ const o={};SECTIONS.forEach(s=>o[s]=[]);return o}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function node(){let a=S[cur];for(const i of path)a=a[i].items;return a}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function fmt(d){if(!d)return"";const[y,m,j]=d.split("-");return j+"/"+m+"/"+y}
+function toggle(id){const f=document.getElementById(id);const was=f.classList.contains("show");
+ document.querySelectorAll("form").forEach(x=>x.classList.remove("show"));if(!was)f.classList.add("show")}
+function render(){
+ document.getElementById("nav").innerHTML=SECTIONS.map(s=>`<a class="${s==cur?"on":""}" onclick="go('${s.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">${esc(s)}</a>`).join("");
+ document.getElementById("title").textContent="Mathématiques / "+cur;
+ let c=`<a onclick="up(0)">${esc(cur)}</a>`,a=S[cur];
+ path.forEach((i,k)=>{c+=` / <a onclick="up(${k+1})">${esc(a[i].name)}</a>`;a=a[i].items});
+ document.getElementById("crumb").innerHTML=c;
+ const items=node();
+ const dirs=items.map((x,i)=>({x,i})).filter(o=>o.x.items);
+ const docs=items.map((x,i)=>({x,i})).filter(o=>!o.x.items);
+ let h=dirs.map(({x,i})=>`<li class="dir"><span class="t">📁 <a onclick="open_(${i})">${esc(x.name)}</a></span><span class="m">(${x.items.length} documents)</span><button class="x" title="Supprimer" onclick="del(${i})">✕</button></li>`).join("");
+ h+=docs.map(({x,i})=>`<li><span class="t">📄 ${x.href?`<a href="${esc(x.href)}" target="_blank">${esc(x.name)}</a>`:`<strong>${esc(x.name)}</strong>`}</span><span class="m">${x.date?"(pdf, "+fmt(x.date)+")":""}</span><button class="x" title="Supprimer" onclick="del(${i})">✕</button></li>`).join("");
+ document.getElementById("list").innerHTML=h||'<li class="empty">Dossier vide. Utilisez « + Document » ou « + Dossier ».</li>';
+}
+function go(s){cur=s;path=[];render()}
+function up(n){path=path.slice(0,n);render()}
+function open_(i){path.push(i);render()}
+function del(i){const it=node()[i];if(confirm("Supprimer « "+it.name+" » ?")){node().splice(i,1);save();render()}}
+function addDir(e){e.preventDefault();node().push({name:dn.value.trim(),items:[]});dn.value="";save();render()}
+function addDoc(e){e.preventDefault();node().push({name:xt.value.trim(),date:xd.value,href:xp.value.trim()});xt.value=xp.value=xd.value="";xf.value="";save();render()}
+function pick(e){const f=e.target.files[0];if(!f)return;if(!xp.value)xp.value=f.name;if(!xt.value)xt.value=f.name.replace(/\.[^.]+$/,"");
+ if(!xd.value)xd.value=new Date(f.lastModified).toISOString().slice(0,10)}
+function exp(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:"application/json"}));a.download="cahier-mpsi.json";a.click()}
+function imp(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{S=JSON.parse(r.result);save();go(SECTIONS[0])}catch(x){alert("Fichier invalide")}};r.readAsText(f)}
+render();
+</script>
+</body>
+</html>
